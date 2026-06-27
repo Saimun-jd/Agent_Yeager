@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Agent Yeager</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
+        
+        body { 
+            font-family: 'Courier New', Courier, monospace;
+            padding: 40px; 
+            background: #0a0a0a; /* Pitch black amp tolex */
+            color: #d0d0d0; /* Raw white */
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        h1, h2, h3 { 
+            font-family: 'Oswald', sans-serif;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+        
+        h1 { 
+            font-size: 3em;
+            color: #ff003c; /* Electric Red */
+            border-bottom: 4px solid #ff003c; 
+            padding-bottom: 10px; 
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 0px rgba(255, 0, 60, 0.3);
+        }
+        
+        .card { 
+            background: #111111;
+            padding: 30px; 
+            margin-bottom: 30px; 
+            border: 2px solid #333333;
+            box-shadow: 8px 8px 0px #000000;
+            transition: border-color 0.1s ease, box-shadow 0.1s ease;
+        }
+        .card:hover { 
+            border-color: #ff003c; 
+        }
+        
+        select, input { 
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            padding: 12px; 
+            margin-top: 10px; 
+            background: #000000; 
+            color: #ffffff; 
+            border: 2px solid #444444; 
+            outline: none;
+            transition: all 0.1s ease;
+        }
+        select:focus, input:focus { 
+            border-color: #ff003c;
+            box-shadow: 0 0 10px rgba(255, 0, 60, 0.5);
+        }
+        
+        button { 
+            font-family: 'Oswald', sans-serif;
+            text-transform: uppercase;
+            font-size: 1.1em;
+            letter-spacing: 1px;
+            padding: 12px 24px; 
+            margin-top: 10px; 
+            cursor: pointer; 
+            background: #222222;
+            color: #ffffff;
+            border: 2px solid #444444;
+            font-weight: 700;
+            transition: all 0.1s ease;
+        }
+        button:hover { 
+            background: #ff003c; 
+            color: #000000; 
+            border-color: #ff003c; 
+            box-shadow: 4px 4px 0px rgba(255, 0, 60, 0.4);
+            transform: translate(-2px, -2px);
+        }
+        button:active {
+            transform: translate(2px, 2px);
+            box-shadow: none;
+        }
+        
+        .status { font-weight: bold; font-family: 'Courier New', Courier, monospace; }
+        .status.connected { color: #00ff41; text-shadow: 0 0 5px rgba(0, 255, 65, 0.5); } /* Neon Green */
+        .status.disconnected { color: #ff003c; text-shadow: 0 0 5px rgba(255, 0, 60, 0.5); }
+        
+        #aiLogs {
+            background: #000000; 
+            border: 2px solid #ff003c; 
+            padding: 20px; 
+            height: 200px; 
+            overflow-y: auto; 
+            font-family: 'Courier New', Courier, monospace; 
+            font-weight: bold;
+            font-size: 14px; 
+            color: #00ff41;
+            box-shadow: inset 0 0 15px rgba(255, 0, 60, 0.2);
+        }
+        
+        /* Brutalist Scrollbar */
+        ::-webkit-scrollbar { width: 12px; }
+        ::-webkit-scrollbar-track { background: #111111; border-left: 1px solid #333; }
+        ::-webkit-scrollbar-thumb { background: #444444; }
+        ::-webkit-scrollbar-thumb:hover { background: #ff003c; }
+    </style>
+</head>
+<body>
+    <h1>Agent Yeager</h1>
+
+    <div class="card">
+        <h2>Connection Status: <span id="connStatus" class="status disconnected">Disconnected</span></h2>
+        <p>To connect from your phone, open this URL:</p>
+        <h3 id="connectUrl" style="background: #444; padding: 10px; text-align: center; border-radius: 5px;">Loading URL...</h3>
+        <div style="text-align: center; margin-top: 10px; margin-bottom: 20px;">
+            <img id="qrcode" style="display: none; border-radius: 5px; width: 150px; height: 150px;" alt="QR Code" />
+        </div>
+        <p>Latency: <span id="latencyValue">N/A</span> ms</p>
+        <p>Input Volume: <progress id="volumeMeter" value="0" max="100"></progress></p>
+        <button id="connectBtn">Start Receiver</button>
+    </div>
+
+    <div class="card">
+        <h2>Audio Output Settings</h2>
+        <label for="deviceSelect">Select Output Device (VB-CABLE):</label><br>
+        <select id="deviceSelect">
+            <option value="">Loading devices...</option>
+        </select>
+        <button id="applyDeviceBtn">Apply Device</button>
+    </div>
+
+    <div class="card">
+        <h2> AI Control Panel</h2>
+        <p>Configure the offline AI models running on your PC.</p>
+        
+        <label for="voiceModelSelect"><strong>1. Voice-to-Text Model:</strong></label><br>
+        <select id="voiceModelSelect" style="width: 100%;">
+            <option value="Xenova/whisper-tiny.en">Tiny (Fastest, ~39MB)</option>
+            <option value="Xenova/whisper-base.en" selected>Base (Recommended, ~74MB)</option>
+            <option value="Xenova/whisper-small.en">Small (Most Accurate, ~241MB)</option>
+            <option value="custom">Custom HuggingFace Model...</option>
+        </select>
+        <input type="text" id="voiceModelCustom" placeholder="e.g. openai/whisper-large-v3" style="width: calc(100% - 18px); display: none; margin-top: 5px;">
+        <br><br>
+
+        <label for="cleanupModelSelect"><strong>2. Text Cleanup Model (LLM):</strong></label><br>
+        <select id="cleanupModelSelect" style="width: 100%;">
+            <option value="none" selected>None (Raw Whisper Output)</option>
+            <option value="Xenova/LaMini-Flan-T5-77M">LaMini-Flan-T5 (Fixes Gibberish, ~300MB)</option>
+            <option value="custom">Custom HuggingFace Model...</option>
+        </select>
+        <input type="text" id="cleanupModelCustom" placeholder="e.g. Xenova/Qwen1.5-0.5B" style="width: calc(100% - 18px); display: none; margin-top: 5px;">
+        <br>
+        <button id="applyAiBtn" style="width: 100%; background: #ff003c; color: #000; border: none; padding: 15px; box-shadow: 4px 4px 0px rgba(255, 0, 60, 0.4);">Apply & Load Models</button>
+        
+        <h3 style="margin-top: 20px;">Live AI Logs</h3>
+        <div id="aiLogs">
+            Awaiting connection...
+        </div>
+    </div>
+
+    <script src="./node_modules/socket.io-client/dist/socket.io.js"></script>
+    <script src="audio.js"></script>
+    <script src="webrtc.js"></script>
+    <script src="renderer.js"></script>
+</body>
+</html>

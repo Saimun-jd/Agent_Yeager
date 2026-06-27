@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Agent Yeager</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#090909">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-primary: #090909;
+            --bg-card: rgba(17, 17, 17, 0.4);
+            --border: rgba(255, 0, 60, 0.2);
+            --accent: #FF003C;
+            --success: #22C55E;
+            --warning: #F59E0B;
+            --text-main: #EAEAEA;
+            --text-secondary: #9A9A9A;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            overflow-x: hidden;
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- Environment Effects --- */
+        #bg-atmosphere {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-image: url('/beatles_bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            opacity: 0.4;
+            filter: blur(8px) brightness(0.7);
+            z-index: 0;
+        }
+        
+        #bg-vignette {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, transparent 20%, #000 100%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        #bg-grain {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.05;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        #bg-scanline-sweep {
+            position: fixed;
+            top: -100px; left: 0; width: 100vw; height: 4px;
+            background: linear-gradient(to bottom, transparent, var(--accent), transparent);
+            box-shadow: 0 0 20px rgba(255,0,60,0.8);
+            opacity: 0.15;
+            z-index: 3;
+            pointer-events: none;
+            animation: sweep 12s linear infinite;
+        }
+
+        @keyframes sweep {
+            0% { transform: translateY(-100px); }
+            10% { transform: translateY(120vh); }
+            100% { transform: translateY(120vh); }
+        }
+
+        /* --- Layout --- */
+        #app-container {
+            width: 100%;
+            max-width: 500px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- Header --- */
+        .app-header {
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 16px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .online-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--success);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success);
+            animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 2px rgba(34, 197, 94, 0.4); }
+            50% { box-shadow: 0 0 10px rgba(34, 197, 94, 0.9); }
+            100% { box-shadow: 0 0 2px rgba(34, 197, 94, 0.4); }
+        }
+
+        h1 {
+            font-family: 'Anton', sans-serif;
+            font-size: 2.2rem;
+            letter-spacing: 2px;
+            color: var(--accent);
+            text-transform: uppercase;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .header-meta {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+        }
+
+        /* --- Cards --- */
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 
+                0 4px 24px rgba(0,0,0,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.05),
+                inset 0 0 15px rgba(255, 0, 60, 0.05);
+            animation: slide-up 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            opacity: 0;
+            transform: translateY(8px);
+        }
+
+        .card:nth-child(2) { animation-delay: 0.05s; }
+        .card:nth-child(3) { animation-delay: 0.1s; }
+        .card:nth-child(4) { animation-delay: 0.15s; }
+
+        @keyframes slide-up {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-header {
+            font-family: 'Anton', sans-serif;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* --- Controls --- */
+        select, input[type="text"] {
+            width: 100%;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-main);
+            font-family: 'JetBrains Mono', monospace;
+            padding: 14px;
+            font-size: 0.9rem;
+            outline: none;
+            border-radius: 4px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            appearance: none;
+        }
+
+        select:focus, input[type="text"]:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(255, 0, 60, 0.2);
+        }
+        
+        .select-wrapper {
+            position: relative;
+        }
+        .select-wrapper::after {
+            content: "▼";
+            font-size: 0.7rem;
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+        }
+
+        button.industrial-btn {
+            width: 100%;
+            font-family: 'Anton', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.4);
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.2s, border-color 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        button.industrial-btn:hover {
+            background: rgba(255, 0, 60, 0.1);
+            border-color: var(--accent);
+        }
+
+        button.industrial-btn:active {
+            transform: scale(0.96);
+            background: rgba(255, 0, 60, 0.2);
+        }
+
+        /* Hero Button */
+        #pttBtn {
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(255, 0, 60, 0.2);
+            animation: breath-btn 3s infinite alternate ease-in-out;
+        }
+        @keyframes breath-btn {
+            0% { box-shadow: 0 0 10px rgba(255, 0, 60, 0.1); }
+            100% { box-shadow: 0 0 25px rgba(255, 0, 60, 0.4); }
+        }
+        #pttBtn.active {
+            background: var(--accent);
+            color: #000;
+            box-shadow: 0 0 30px rgba(255, 0, 60, 0.6);
+            transform: scale(0.96);
+            animation: none;
+        }
+
+        /* Waveform Animation */
+        .waveform {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            height: 32px;
+            margin-bottom: 8px;
+        }
+        .wave-bar {
+            width: 4px;
+            background-color: #000;
+            border-radius: 2px;
+            animation: wave 1s infinite ease-in-out;
+        }
+        .wave-bar:nth-child(1) { height: 12px; animation-delay: 0.0s; }
+        .wave-bar:nth-child(2) { height: 24px; animation-delay: 0.1s; }
+        .wave-bar:nth-child(3) { height: 32px; animation-delay: 0.2s; }
+        .wave-bar:nth-child(4) { height: 18px; animation-delay: 0.3s; }
+        .wave-bar:nth-child(5) { height: 28px; animation-delay: 0.4s; }
+
+        @keyframes wave {
+            0%, 100% { transform: scaleY(0.4); }
+            50% { transform: scaleY(1); }
+        }
+
+        /* --- Rolling Log / Terminal --- */
+        .terminal-log {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            padding: 12px;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            min-height: 100px;
+            max-height: 150px;
+            overflow-y: auto;
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .log-entry {
+            display: flex;
+            gap: 8px;
+        }
+        .log-prefix {
+            color: var(--text-secondary);
+            user-select: none;
+        }
+        .log-content {
+            word-break: break-word;
+        }
+        .log-content.highlight { color: var(--text-main); }
+        .log-content.error { color: var(--accent); }
+        .log-content.system { color: var(--text-secondary); }
+
+        .blinking-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 12px;
+            background-color: var(--text-secondary);
+            vertical-align: middle;
+            animation: blink 1s step-end infinite;
+            margin-left: 4px;
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        .terminal-input-wrapper {
+            display: flex;
+            align-items: center;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 4px;
+            padding-left: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .terminal-input-wrapper:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(255, 0, 60, 0.2);
+        }
+        .terminal-input-wrapper span {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        .terminal-input-wrapper input {
+            border: none;
+            background: transparent;
+            box-shadow: none;
+            padding-left: 8px;
+            color: var(--text-main);
+            font-family: 'JetBrains Mono', monospace;
+            flex: 1;
+            height: 48px;
+            outline: none;
+        }
+
+        #visualizer-container {
+            width: 100%;
+            height: 80px;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 4px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="bg-atmosphere"></div>
+    <div id="bg-vignette"></div>
+    <div id="bg-grain"></div>
+    <div id="bg-scanline-sweep"></div>
+
+    <div id="app-container">
+        <header class="app-header">
+            <div class="header-top">
+                <span style="letter-spacing: 2px;">SECURE LINK</span>
+                <div class="online-indicator"><span class="status-dot"></span> ONLINE</div>
+            </div>
+            <h1>AGENT YEAGER</h1>
+            <div class="header-meta">INTELLIGENCE SYSTEM v2.4</div>
+        </header>
+        
+        <div class="card">
+            <div class="card-header">Operating Mode</div>
+            <div class="select-wrapper">
+                <select id="modeSelect">
+                    <option value="spotify" selected>🎧 Spotify AI Assistant</option>
+                    <option value="normal">🎙 Raw Voice Stream</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- NORMAL MODE UI -->
+        <div id="normalModeUI" class="card" style="display: none;">
+            <div class="card-header">Connection Uplink</div>
+            
+            <div id="visualizer-container">
+                <canvas id="audioCanvas"></canvas>
+            </div>
+            
+            <div class="terminal-log" id="normalLogBox">
+                <div class="log-entry"><span class="log-prefix">&gt;</span><span class="log-content system">SYSTEM ONLINE</span></div>
+                <div class="log-entry"><span class="log-prefix">&gt;</span><span class="log-content system">WAITING FOR CONNECTION INITIATION...<span class="blinking-cursor"></span></span></div>
+            </div>
+            
+            <button id="startBtn" class="industrial-btn" style="margin-top: 16px; border-color: var(--accent); color: var(--accent);">ENGAGE UPLINK</button>
+            <button id="stopBtn" class="industrial-btn" style="display: none; margin-top: 16px;">TERMINATE LINK</button>
+        </div>
+
+        <!-- SPOTIFY AI MODE UI -->
+        <div id="spotifyModeUI" class="card">
+            <div class="card-header">Intelligence Terminal</div>
+            
+            <button id="pttBtn" class="industrial-btn" style="height: 120px; font-size: 1.4rem; flex-direction: column;">
+                <div id="pttIcon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px; margin-bottom: 8px;">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                </div>
+                <span id="pttText">HOLD TO TRANSMIT</span>
+            </button>
+            
+            <div class="terminal-log" id="aiLogBox" style="margin-top: 16px;">
+                <div class="log-entry"><span class="log-prefix">&gt;</span><span class="log-content system">LOCAL AI INITIALIZED</span></div>
+                <div class="log-entry"><span class="log-prefix">&gt;</span><span class="log-content system">READY FOR VOICE COMMANDS...<span class="blinking-cursor"></span></span></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Manual Override</div>
+            <div class="terminal-input-wrapper">
+                <span>&gt;</span>
+                <input type="text" id="manualInput" placeholder="enter command..." autocomplete="off">
+            </div>
+            <button id="sendTextBtn" class="industrial-btn" style="margin-top: 16px; font-size: 1rem; padding: 12px;">EXECUTE OVERRIDE</button>
+        </div>
+    </div>
+
+    <audio id="remoteAudio" autoplay playsinline style="width: 1px; height: 1px; opacity: 0.01; position: absolute; top: 0; left: 0;"></audio>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        // --- Helper: Terminal Log Appender ---
+        function appendLog(box, msg, type = 'highlight') {
+            const cursor = box.querySelector('.blinking-cursor');
+            if (cursor) cursor.remove();
+            
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-prefix">&gt;</span><span class="log-content ${type}">${msg}<span class="blinking-cursor"></span></span>`;
+            
+            box.appendChild(entry);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        // --- UI Elements ---
+        const modeSelect = document.getElementById('modeSelect');
+        const normalModeUI = document.getElementById('normalModeUI');
+        const spotifyModeUI = document.getElementById('spotifyModeUI');
+        
+        // Normal Mode
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const normalLogBox = document.getElementById('normalLogBox');
+        const canvas = document.getElementById('audioCanvas');
+        const canvasCtx = canvas.getContext('2d');
+        
+        // Resize canvas correctly
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // AI Mode
+        const pttBtn = document.getElementById('pttBtn');
+        const pttIcon = document.getElementById('pttIcon');
+        const pttText = document.getElementById('pttText');
+        const aiLogBox = document.getElementById('aiLogBox');
+
+        // Manual Text
+        const manualInput = document.getElementById('manualInput');
+        const sendTextBtn = document.getElementById('sendTextBtn');
+
+        // --- State ---
+        let pc, stream;
+        let audioContext, analyser, scriptProcessor, microphone;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let visualizerId = null;
+
+        // --- Mode Switching ---
+        modeSelect.addEventListener('change', () => {
+            if (modeSelect.value === 'normal') {
+                normalModeUI.style.display = 'block';
+                spotifyModeUI.style.display = 'none';
+                resizeCanvas(); 
+            } else {
+                normalModeUI.style.display = 'none';
+                spotifyModeUI.style.display = 'block';
+                disconnectWebRTC(); 
+            }
+        });
+
+        // --- Normal Mode: WebRTC Streaming ---
+        startBtn.onclick = async () => {
+            startBtn.disabled = true;
+            appendLog(normalLogBox, 'REQUESTING HARDWARE ACCESS...', 'system');
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+                startAudioMeter(stream);
+                appendLog(normalLogBox, 'INITIATING SECURE HANDSHAKE...', 'system');
+                connectWebRTC();
+            } catch (err) {
+                appendLog(normalLogBox, 'HARDWARE ACCESS DENIED.', 'error');
+                startBtn.disabled = false;
+            }
+        };
+
+        stopBtn.onclick = () => {
+            disconnectWebRTC();
+        };
+
+        function connectWebRTC() {
+            pc = new RTCPeerConnection();
+            stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+            socket.emit('signal', { type: 'join', role: 'phone' });
+            pc.createOffer().then(offer => {
+                pc.setLocalDescription(offer);
+                socket.emit('signal', { type: 'offer', offer });
+            });
+
+            socket.on('signal', async (data) => {
+                if (data.type === 'answer') {
+                    await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+                    appendLog(normalLogBox, 'LINK ESTABLISHED. TRANSMITTING.', 'highlight');
+                    startBtn.style.display = 'none';
+                    stopBtn.style.display = 'flex';
+                } else if (data.type === 'candidate') {
+                    await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+                }
+            });
+
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('signal', { type: 'candidate', candidate: event.candidate });
+                }
+            };
+            
+            pc.onconnectionstatechange = () => {
+                if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+                    disconnectWebRTC();
+                }
+            };
+        }
+
+        function disconnectWebRTC() {
+            if (pc) { pc.close(); pc = null; }
+            if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+            appendLog(normalLogBox, 'LINK TERMINATED.', 'system');
+            startBtn.disabled = false;
+            startBtn.style.display = 'flex';
+            stopBtn.style.display = 'none';
+            stopAudioMeter();
+        }
+
+        // --- Audio Visualizer ---
+        function startAudioMeter(audioStream) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            analyser.smoothingTimeConstant = 0.8;
+            analyser.fftSize = 128;
+            
+            microphone = audioContext.createMediaStreamSource(audioStream);
+            microphone.connect(analyser);
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            function draw() {
+                visualizerId = requestAnimationFrame(draw);
+                analyser.getByteFrequencyData(dataArray);
+
+                canvasCtx.fillStyle = '#000000';
+                canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+                const barWidth = (canvas.width / bufferLength) * 2.5;
+                let barHeight;
+                let x = 0;
+
+                for(let i = 0; i < bufferLength; i++) {
+                    barHeight = dataArray[i] / 255 * canvas.height;
+                    
+                    canvasCtx.fillStyle = '#FF003C';
+                    canvasCtx.shadowBlur = 10;
+                    canvasCtx.shadowColor = '#FF003C';
+                    
+                    canvasCtx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
+                    x += barWidth;
+                }
+            }
+            draw();
+        }
+
+        function stopAudioMeter() {
+            if (visualizerId) cancelAnimationFrame(visualizerId);
+            if (analyser) analyser.disconnect();
+            if (microphone) microphone.disconnect();
+            if (audioContext && audioContext.state !== 'closed') audioContext.close();
+            
+            canvasCtx.fillStyle = '#000000';
+            canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // --- Push-to-Talk Logic ---
+        let pttStream = null;
+
+        pttBtn.addEventListener('mousedown', startRecording);
+        pttBtn.addEventListener('touchstart', startRecording);
+
+        pttBtn.addEventListener('mouseup', stopRecording);
+        pttBtn.addEventListener('touchend', stopRecording);
+        pttBtn.addEventListener('touchcancel', stopRecording);
+
+        socket.on('ai_transcription', (data) => {
+            if (data.error) {
+                appendLog(aiLogBox, data.error, 'error');
+            } else if (data.text) {
+                appendLog(aiLogBox, `RCV: "${data.text}"`, 'highlight');
+            } else {
+                appendLog(aiLogBox, 'AUDIO UNCLEAR. REPEAT.', 'error');
+            }
+        });
+
+        async function startRecording(e) {
+            e.preventDefault();
+            try {
+                pttStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(pttStream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = event => {
+                    if (event.data.size > 0) audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = processAudio;
+                mediaRecorder.start();
+
+                pttBtn.classList.add('active');
+                pttIcon.innerHTML = `
+                    <div class="waveform">
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                    </div>
+                `;
+                pttText.innerText = 'RECORDING...';
+                appendLog(aiLogBox, 'LISTENING...', 'system');
+            } catch (err) {
+                appendLog(aiLogBox, 'HARDWARE ACCESS DENIED.', 'error');
+            }
+        }
+
+        function stopRecording(e) {
+            e.preventDefault();
+            if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                mediaRecorder.stop();
+                
+                pttBtn.classList.remove('active');
+                pttIcon.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px; margin-bottom: 8px;">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                `;
+                pttText.innerText = 'HOLD TO TRANSMIT';
+                appendLog(aiLogBox, 'TRANSMITTING PAYLOAD...', 'system');
+                
+                if (pttStream) {
+                    pttStream.getTracks().forEach(t => t.stop());
+                }
+            }
+        }
+
+        async function processAudio() {
+            const blob = new Blob(audioChunks, { type: 'audio/webm' });
+            const arrayBuffer = await blob.arrayBuffer();
+            
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            try {
+                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                const targetSampleRate = 16000;
+                const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, targetSampleRate * audioBuffer.duration, targetSampleRate);
+                const source = offlineCtx.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(offlineCtx.destination);
+                source.start(0);
+                
+                const resampledBuffer = await offlineCtx.startRendering();
+                let float32Data = resampledBuffer.getChannelData(0);
+                
+                if (float32Data.length < 16000 * 0.5) {
+                    appendLog(aiLogBox, 'PAYLOAD TOO SMALL.', 'system');
+                    return;
+                }
+
+                let max = 0;
+                for (let i = 0; i < float32Data.length; i++) {
+                    const abs = Math.abs(float32Data[i]);
+                    if (abs > max) max = abs;
+                }
+                if (max > 0 && max < 1.0) {
+                    const scale = 1.0 / max;
+                    for (let i = 0; i < float32Data.length; i++) {
+                        float32Data[i] *= scale;
+                    }
+                }
+
+                socket.emit('audio_pcm', float32Data.buffer);
+
+            } catch (err) {
+                console.error(err);
+                appendLog(aiLogBox, 'DECODING FAILED.', 'error');
+            } finally {
+                if (audioCtx.state !== 'closed') {
+                    audioCtx.close();
+                }
+            }
+        }
+
+        // --- Manual Text Command Logic ---
+        sendTextBtn.onclick = () => {
+            const val = manualInput.value.trim();
+            if (val) {
+                socket.emit('voice_command', { text: val });
+                manualInput.value = '';
+                appendLog(aiLogBox, `TX: "${val}"`, 'highlight');
+            }
+        };
+        
+        manualInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendTextBtn.click();
+        });
+
+        // Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW failed', err));
+            });
+        }
+    </script>
+</body>
+</html>

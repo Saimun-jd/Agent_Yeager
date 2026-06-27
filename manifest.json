@@ -1,0 +1,21 @@
+{
+  "name": "Agent Yeager",
+  "short_name": "Agent Yeager",
+  "start_url": "/mobile.html",
+  "display": "standalone",
+  "background_color": "#2c3e50",
+  "theme_color": "#2c3e50",
+  "description": "Wireless microphone bridge for PC.",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmZiI+PHBhdGggZD0iTTEyIDE0YzEuNjYgMCAyLjk5LTEuMzQgMi45OS0zTDE1IDVjMC0xLjY2LTEuMzQtMy0zLTNTOSAzLjM0IDkgNXY2YzAgMS.6NiAxLjM0IDMgMyAzem01LjMtM2MtMCAzLTEuOTkgNS40LTEuOTkgNS40TDEyIDIydjNIMjhWMi4waC0yLjY2VjE0SDkuMjd2My40M0wxMiAyMnYzSDEyek03IDIyaDEwdjJIMXoiLz48L3N2Zz4=",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmZiI+PHBhdGggZD0iTTEyIDE0YzEuNjYgMCAyLjk5LTEuMzQgMi45OS0zTDE1IDVjMC0xLjY2LTEuMzQtMy0zLTNTOSAzLjM0IDkgNXY2YzAgMS.6NiAxLjM0IDMgMyAzem01LjMtM2MtMCAzLTEuOTkgNS40LTEuOTkgNS40TDEyIDIydjNIMjhWMi4waC0yLjY2VjE0SDkuMjd2My40M0wxMiAyMnYzSDEyek03IDIyaDEwdjJIMXoiLz48L3N2Zz4=",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
