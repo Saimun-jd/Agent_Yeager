@@ -5,6 +5,7 @@ Agent Yeager is a premium, mobile-first intelligence terminal web application fo
 ## Features
 
 - **Tactical UI/UX:** Dark matte theme, 8-point grid, layered glassmorphism shadows, and an animated environmental background.
+- **Spotify Voice Control (MCP Integration):** Seamlessly control music playback, search tracks, and manage your Spotify queue using natural voice commands processed through a local AI assistant and routed to the Spotify Model Context Protocol (MCP) server.
 - **Push-to-Talk (PTT):** Hero interaction button featuring an animated CSS oscilloscope waveform.
 - **Real-Time Audio:** Secure WebRTC streaming between devices.
 - **Terminal Logs:** Authentic rolling terminal interface for system status and command override.
@@ -28,9 +29,9 @@ Agent Yeager is a premium, mobile-first intelligence terminal web application fo
    ```
 
 ### Running the App
-1. Start the server:
+1. Start the server and Electron app:
    ```bash
-   node server.js
+   npm start
    ```
 2. The server will run on `https://0.0.0.0:3000` (HTTPS is required for WebRTC microphone access).
 3. Open `https://localhost:3000` on your desktop or `https://<YOUR_LOCAL_IP>:3000` on your mobile device. You will need to accept the self-signed certificate warning in your browser.
@@ -48,6 +49,11 @@ The tactical HUD relies on CSS variables defined in `mobile.html`. You can custo
 - `--accent`: Primary interaction color (default: `#FF003C`)
 - `--success`: Online/Connected indicator (default: `#22C55E`)
 - `--text-main`: Primary text color (default: `#EAEAEA`)
+
+## Future Extensions
+
+### Model Fine-Tuning via DSL Training
+Future development of Agent Yeager includes fine-tuning the underlying local AI models using Domain-Specific Language (DSL) training. By defining a strict grammar and vocabulary tailored specifically to tactical operations and Spotify control directives, we plan to train the model to yield highly deterministic, ultra-low latency command execution. This will eliminate hallucinated responses and vastly improve offline reliability.
 
 ## Troubleshoot
 if spotify mcp does not connect manually run 

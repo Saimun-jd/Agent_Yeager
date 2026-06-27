@@ -1,9 +1,9 @@
-require("dotenv").config();
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, '../.env') });
 const { Server } = require("socket.io");
 const http = require("http");
 const https = require("https");
 const fs = require("fs");
-const path = require("path");
 const selfsigned = require("selfsigned");
 const { WaveFile } = require("wavefile");
 const { Client } = require("@modelcontextprotocol/sdk/client/index.js");
@@ -54,7 +54,7 @@ const requestHandler = (req, res) => {
 
     const file = fileMap[basePath];
     if (file) {
-        fs.readFile(path.join(__dirname, file), (err, data) => {
+        fs.readFile(path.join(__dirname, '../public', file), (err, data) => {
             if (err) {
                 res.writeHead(404);
                 return res.end();
@@ -66,7 +66,7 @@ const requestHandler = (req, res) => {
         });
     } else if (basePath.endsWith('.jpg') || basePath.endsWith('.png') || basePath.endsWith('.jpeg')) {
         // Serve image files for the background
-        const imgPath = path.join(__dirname, basePath);
+        const imgPath = path.join(__dirname, '../public', basePath);
         fs.readFile(imgPath, (err, data) => {
             if (err) {
                 res.writeHead(404);
